@@ -1,6 +1,13 @@
 /* Karachi Construction Cost Calculator — service worker */
 var VERSION = 'v1';
-var SHELL = ['index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
+const SHELL = [
+  "./",
+  "index.html",
+  "manifest.json",
+  "icon-192.png",
+  "icon-512.png",
+  "apple-touch-icon.png"
+];
 var SHELL_CACHE = 'kcc-shell-' + VERSION;
 var RUNTIME_CACHE = 'kcc-runtime-' + VERSION;
 
