@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karachi Construction Cost Calculator</title>
+<style>
+  :root{
+    --accent:#0f766e; --accent-dark:#0b5a54; --accent-soft:#e6f3f1;
+    --ink:#1f2937; --muted:#566370; --line:#dfe6e4; --bg:#f3f6f5; --card:#ffffff;
+    --danger:#b42318; --radius:14px;
+    --shadow:0 1px 2px rgba(16,24,40,.05),0 4px 14px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 16px 90px}
+  h1{font-size:1.6rem;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--muted);margin:0 0 14px}
+  .banner{background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:8px;
+    padding:10px 14px;margin:0 0 14px;font-size:.95rem}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+  button.btn{font:inherit;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;
+    border:1px solid var(--accent);background:var(--accent);color:#fff}
+  button.btn.ghost{background:#fff;color:var(--accent-dark)}
+  button.btn:hover{filter:brightness(.96)}
+  button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{
+    outline:3px solid #7cc4bb;outline-offset:2px}
+  .layout{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+  @media(min-width:960px){.layout{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);margin:0 0 14px}
+  .card[hidden]{display:none}
+  .card>summary{cursor:pointer;padding:14px 18px;font-weight:700;list-style:none;display:flex;
+    justify-content:space-between;align-items:center}
+  .card>summary::-webkit-details-marker{display:none}
+  .card>summary::after{content:"▾";color:var(--accent);transition:transform .15s}
+  .card:not([open])>summary::after{transform:rotate(-90deg)}
+  .card-body{padding:2px 18px 16px}
+  .note{margin:0 0 10px;color:var(--muted);font-size:.9rem}
+  .field{position:relative;margin:0 0 12px}
+  .lab{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+  .lab label{font-weight:600;font-size:.93rem}
+  .ctrl{display:flex;gap:8px}
+  .inp{flex:1;display:flex;align-items:center;border:1px solid #c4cfcc;border-radius:9px;background:#fff;min-width:0}
+  .inp:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px #bfe3de}
+  .inp input{flex:1;min-width:0;border:0;background:transparent;font:inherit;padding:9px 10px;border-radius:9px;color:var(--ink)}
+  .inp input:focus-visible{outline:none}
+  .inp .suf{padding:0 10px;color:var(--muted);font-size:.85rem;white-space:nowrap}
+  select{font:inherit;padding:9px 8px;border:1px solid #c4cfcc;border-radius:9px;background:#fff;color:var(--ink);max-width:100%}
+  .ctrl>select:only-child{flex:1}
+  input[aria-invalid="true"]{color:var(--danger)}
+  .warn{color:var(--danger);font-size:.82rem;min-height:0}
+  .help{color:var(--muted);font-size:.82rem;margin-top:3px}
+  .tip{position:static;width:20px;height:20px;border-radius:50%;border:1px solid var(--accent);background:#fff;
+    color:var(--accent-dark);font:700 12px/1 system-ui;cursor:help;padding:0;flex:none}
+  .tip::after{content:attr(data-tip);display:none;position:absolute;left:0;right:0;top:26px;z-index:20;
+    background:#17302c;color:#fff;font:400 .85rem/1.4 system-ui;padding:9px 11px;border-radius:8px;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);text-align:left;pointer-events:none}
+  .tip:hover::after,.tip:focus::after{display:block}
+
+  /* results */
+  .results{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:16px 18px}
+  @media(min-width:960px){.results{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+  .hero{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .stat{background:var(--accent-soft);border-radius:12px;padding:12px 14px}
+  .stat.main{grid-column:1/-1;background:var(--accent);color:#fff}
+  .stat small{display:block;font-size:.8rem;opacity:.85;text-transform:uppercase;letter-spacing:.04em}
+  .stat b{font-size:1.35rem;font-variant-numeric:tabular-nums}
+  .stat.main b{font-size:2rem}
+  .stat span{display:block;font-size:.85rem;opacity:.9}
+  h2{font-size:1.05rem;margin:18px 0 8px}
+  .tbl{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  thead th{background:#f0f4f3;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);position:sticky;top:0}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.grp th{background:var(--accent-soft);color:var(--accent-dark);font-size:.82rem}
+  tr.subr td{font-weight:700;background:#fafcfb}
+  tr.tot td{font-weight:800;background:var(--accent-soft);border-top:2px solid var(--accent)}
+  tr.base td{background:var(--accent-soft);font-weight:700}
+  .chartwrap{position:relative;height:260px}
+  .bars{display:grid;gap:8px}
+  .bar{display:grid;grid-template-columns:100px 1fr 90px;gap:8px;align-items:center;font-size:.85rem}
+  .bar .track{background:#edf2f1;border-radius:6px;height:14px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:6px}
+  .bar .v{text-align:right;font-variant-numeric:tabular-nums}
+  .formulas pre{white-space:pre-wrap;background:#f6f9f8;border:1px solid var(--line);border-radius:10px;
+    padding:12px;font:.85rem/1.55 ui-monospace,Menlo,Consolas,monospace;margin:0 0 10px}
+  .formulas p{margin:0 0 8px}
+  .printmeta{display:none;margin:0 0 10px;color:var(--muted)}
+  .mbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--accent);color:#fff;
+    padding:8px 16px;justify-content:space-between;gap:12px;box-shadow:0 -4px 14px rgba(0,0,0,.2)}
+  .mbar small{display:block;font-size:.7rem;opacity:.85;text-transform:uppercase}
+  .mbar b{font-variant-numeric:tabular-nums}
+  @media(max-width:959px){.mbar{display:flex}}
+  @media(max-width:520px){.bar{grid-template-columns:80px 1fr 80px}.stat.main b{font-size:1.6rem}}
+  .foot{color:var(--muted);font-size:.82rem;margin-top:16px}
+
+  @media print{
+    body{background:#fff;font-size:12px}
+    .toolbar,.inputs,.mbar,.formulas,.noprint{display:none!important}
+    .layout{display:block}
+    .results{position:static;max-height:none;overflow:visible;box-shadow:none;border:0;padding:0}
+    .wrap{padding:0}
+    .printmeta{display:block}
+    .stat.main{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .stat,tr.grp th,tr.tot td,.bar .fill{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    thead th{position:static}
+    tr{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Karachi Construction Cost Calculator</h1>
+  <p class="sub">Estimate total cost and cost per square yard from editable material and labour rates. Everything recalculates as you type.</p>
+
+  <div class="banner" role="note"><strong>Default rates are indicative Karachi market estimates.</strong> Update them with today's supplier quotes before relying on the result.</div>
+
+  <div class="toolbar">
+    <button type="button" class="btn ghost" id="btnReset">Reset to Karachi defaults</button>
+    <button type="button" class="btn ghost" id="btnCsv">Export CSV</button>
+    <button type="button" class="btn" id="btnPrint">Print / Save as PDF</button>
+  </div>
+
+  <div class="layout">
+    <form class="inputs" id="groups" onsubmit="return false" autocomplete="off" aria-label="Cost inputs"></form>
+
+    <section class="results" aria-live="polite" aria-label="Results">
+      <p class="printmeta" id="printMeta"></p>
+      <div class="hero">
+        <div class="stat main"><small>Total cost</small><b id="rTotal">—</b><span id="rWords"></span></div>
+        <div class="stat"><small>Cost per sq yd</small><b id="rYd">—</b></div>
+        <div class="stat"><small>Cost per sq ft</small><b id="rFt">—</b></div>
+        <div class="stat" style="grid-column:1/-1"><small>Covered area</small><b id="rArea">—</b><span id="rAreaYd"></span></div>
+      </div>
+
+      <h2>Cost share by category</h2>
+      <div class="chartwrap" id="chartWrap"><canvas id="chart" role="img" aria-label="Cost share by category"></canvas></div>
+      <div class="bars" id="bars" hidden></div>
+
+      <h2>Itemised breakdown</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Item</th><th class="n">Qty</th><th>Unit</th><th class="n">Rate (PKR)</th><th class="n">Amount (PKR)</th><th class="n">% of total</th></tr></thead>
+          <tbody id="breakdown"></tbody>
+        </table>
+      </div>
+
+      <h2>Sensitivity — steel rate vs cost per sq yd</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Steel rate change</th><th class="n">Steel (PKR/kg)</th><th class="n">Cost / sq yd</th><th class="n">Total</th><th class="n">vs base</th></tr></thead>
+          <tbody id="sens"></tbody>
+        </table>
+      </div>
+      <p class="foot">Estimates only. Quantities use thumb rules, not a bill of quantities (BOQ).</p>
+    </section>
+  </div>
+
+  <details class="card formulas" style="margin-top:18px">
+    <summary>Formulas &amp; Assumptions</summary>
+    <div class="card-body">
+      <p>1 square yard = 9 square feet. All internal math is in sq ft; results are shown in sq ft and sq yd. Plot area in sq metres is converted at 1 sq m = 10.7639 sq ft.</p>
+<pre>Covered area (sq ft) = plot area (sq ft) × (ground coverage% + (floors − 1) × upper coverage%)
+Quantity of each material = covered area × consumption norm × (1 + wastage%)
+Cost of each material = quantity × rate
+Water: tankers = litres ÷ litres per tanker; cost = tankers × tanker rate
+Structure subtotal = sum of material costs
+Finishes subtotal = covered area × sum of finish rates per sq ft (doors &amp; windows may be a lump sum)
+Labour subtotal = covered area × labour rate per sq ft
+Services = approval charges + utility charges (lump sums)
+Subtotal = structure + finishes + labour + services
+Total = subtotal × (1 + contingency%) × (1 + contractor margin%)
+Cost per sq ft = total ÷ covered area (sq ft)
+Cost per sq yd = cost per sq ft × 9</pre>
+      <p><strong>Notes.</strong> Finishes apply only for Standard and A-Class packages (Grey Structure = 0). Package presets are rough estimates and can be overridden. Contingency is applied on the subtotal, then contractor margin on the result. Negative or blank inputs are treated as 0; floors have a minimum of 1 and coverage is capped at 100%.</p>
+      <p><strong>Sources of defaults.</strong> Rates are indicative Karachi market levels for the stated units; norms are common thumb rules for residential RCC frame construction. Replace both with your own supplier quotes and BOQ.</p>
+    </div>
+  </details>
+</div>
+
+<div class="mbar" aria-hidden="true">
+  <div><small>Total</small><b id="mbTotal">—</b></div>
+  <div style="text-align:right"><small>Per sq yd</small><b id="mbYd">—</b></div>
+</div>
+
+<!-- Chart.js is optional: if the CDN fails, a pure-CSS bar chart is shown instead -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" onerror="window.noChart=true"></script>
+<script>
+(function(){
+'use strict';
+
+/* ---------- Field definitions (drive both the form and the defaults) ---------- */
+var GROUPS = [
+ {id:'plot', title:'A · Plot details', open:true, fields:[
+  {id:'plotArea',label:'Plot area',def:120,min:0,unit:{id:'plotUnit',def:'sqyd',options:[['sqyd','sq yards'],['sqft','sq ft'],['sqm','sq metres']]},
+   tip:'Total plot size. Karachi plots are usually quoted in sq yards (e.g. 120, 240, 400). 1 sq yd = 9 sq ft.'},
+  {id:'floors',label:'Number of floors',def:2,min:1,suffix:'floors',
+   tip:'Total storeys built including the ground floor. Ground + 1 upper floor = 2.'},
+  {id:'groundCov',label:'Ground floor coverage',def:100,max:100,suffix:'%',
+   tip:'Share of the plot covered by the ground floor. 100% means the whole plot is built on (typical for Karachi plots).'},
+  {id:'upperCov',label:'Upper floors coverage',def:80,max:100,suffix:'%',
+   tip:'Share of the plot area covered on each upper floor (after setbacks, open areas, terraces).'},
+  {id:'package',label:'Construction package',kind:'select',def:'grey',
+   options:[['grey','Grey Structure'],['standard','Standard Finish'],['aclass','A-Class Finish']],
+   tip:'Grey Structure = bare frame, walls and plaster-ready shell. Standard / A-Class fill in the finish rates in section C with presets that you can override.'}
+ ]},
+ {id:'struct', title:'B · Structure material rates', open:true, fields:[
+  {id:'cement',label:'Cement',def:1400,suffix:'PKR / 50 kg bag',
+   tip:'Price of one 50 kg bag. Check with your dealer or builder merchant; rates move often by brand and season.'},
+  {id:'steel',label:'Steel / iron bar',def:270,help:true,
+   unit:{id:'steelUnit',def:'kg',options:[['kg','PKR / kg'],['ton','PKR / tonne']]},
+   tip:'Reinforcement bar price. Karachi steel rates change often. Quote from Karachi steel market dealers. Switching the unit converts the value automatically.'},
+  {id:'steelGrade',label:'Steel grade',kind:'select',def:'60',options:[['60','Grade 60'],['40','Grade 40']],
+   tip:'Grade 60 is the usual choice for structural work. Changing the grade loads a typical rate for that grade, which you can edit.'},
+  {id:'sand',label:'Sand',def:95,help:true,
+   unit:{id:'sandUnit',def:'cft',options:[['cft','PKR / cft'],['100','PKR / 100 cft']]},
+   tip:'Price of building sand (e.g. Bholari / Hub). Quoted per cubic ft or per 100 cft. Switching the unit converts the value.'},
+  {id:'crush',label:'Crush / coarse aggregate',def:100,help:true,
+   unit:{id:'crushUnit',def:'cft',options:[['cft','PKR / cft'],['100','PKR / 100 cft']]},
+   tip:'Price of crushed stone aggregate for concrete, per cubic ft (or per 100 cft).'},
+  {id:'bricks',label:'Bricks',def:24000,suffix:'PKR / 1,000 bricks',
+   tip:'Price per 1,000 bricks delivered. Varies by brick class (first class vs. other) and delivery distance.'},
+  {id:'tanker',label:'Water tanker',def:3500,suffix:'PKR / tanker',
+   tip:'Price of one water tanker delivered to the site.'},
+  {id:'litresTanker',label:'Water per tanker',def:4546,suffix:'litres',
+   tip:'Capacity of one tanker. 1,000 imperial gallons is about 4,546 litres.'},
+  {id:'wastage',label:'Wastage',def:5,suffix:'%',
+   tip:'Allowance for breakage, spillage and over-ordering. Applied to every material quantity.'}
+ ]},
+ {id:'finish', title:'C · Finishes', open:true, note:'Presets from the package dropdown are rough estimates. Override any value.', fields:[
+  {id:'tiles',label:'Flooring / tiles',def:0,suffix:'PKR / sq ft',tip:'Supply and fixing of floor and bathroom/kitchen tiles, averaged over covered area.'},
+  {id:'paint',label:'Plaster + paint',def:0,suffix:'PKR / sq ft',tip:'Internal and external plaster plus paint, averaged over covered area.'},
+  {id:'doors',label:'Doors & windows',def:0,
+   unit:{id:'doorMode',def:'sqft',options:[['sqft','PKR / sq ft'],['lump','lump sum PKR']]},
+   tip:'Either a rate per sq ft of covered area, or a single lump sum for all doors, windows and frames.'},
+  {id:'elec',label:'Electrical fittings',def:0,suffix:'PKR / sq ft',tip:'Wiring, switches, DB, light points and fittings, averaged over covered area.'},
+  {id:'plumb',label:'Plumbing & sanitary',def:0,suffix:'PKR / sq ft',tip:'Pipes, fittings, bathroom sanitary ware and water tank connections, averaged over covered area.'}
+ ]},
+ {id:'labour', title:'D · Labour & services', open:true, fields:[
+  {id:'labour',label:'Labour rate',def:550,suffix:'PKR / sq ft',
+   tip:'Contractor labour rate per sq ft of covered area (mason, bar-bender, carpenter, helpers).'},
+  {id:'margin',label:'Contractor profit / margin',def:10,suffix:'%',tip:'Contractor margin applied on the subtotal after contingency.'},
+  {id:'contingency',label:'Contingency / misc.',def:5,suffix:'%',tip:'Buffer for price rises, small extras and unforeseen items. Applied on the subtotal.'},
+  {id:'approval',label:'Government approval charges',def:75000,suffix:'PKR lump sum',
+   tip:'Building plan approval and related fees (e.g. SBCA). Varies with plot size and number of floors.'},
+  {id:'utility',label:'Utility charges',def:100000,suffix:'PKR lump sum',
+   tip:'Utility connection charges (electricity, gas, water/sewerage connection costs as applicable).'}
+ ]},
+ {id:'norms', title:'E · Consumption norms', open:false,
+  note:'Engineering assumptions — adjust to match your BOQ.', fields:[
+  {id:'nCement',label:'Cement',def:0.45,suffix:'bags / sq ft',tip:'Thumb rule for residential RCC frame construction. Replace with your BOQ value.'},
+  {id:'nSteel',label:'Steel',def:4.5,suffix:'kg / sq ft',tip:'Thumb rule, typically 3.5–5 kg per sq ft depending on design. Replace with your structural engineer\'s figure.'},
+  {id:'nSand',label:'Sand',def:2.0,suffix:'cft / sq ft',tip:'Combined sand for concrete, masonry and plaster per sq ft of covered area.'},
+  {id:'nCrush',label:'Crush',def:1.5,suffix:'cft / sq ft',tip:'Coarse aggregate for concrete per sq ft of covered area.'},
+  {id:'nBricks',label:'Bricks',def:9,suffix:'nos / sq ft',tip:'Number of bricks per sq ft of covered area for walls.'},
+  {id:'nWater',label:'Water',def:1.5,suffix:'litres / sq ft',tip:'Construction water (curing, mixing) per sq ft of covered area.'}
+ ]}
+];
+var FIELDS = []; GROUPS.forEach(function(g){ g.fields.forEach(function(f){ FIELDS.push(f); }); });
+
+/* Package presets for finish rates (indicative estimates, PKR per sq ft) */
+var PRESETS = {
+  grey:     {tiles:0,   paint:0,   doors:0,   elec:0,   plumb:0},
+  standard: {tiles:250, paint:180, doors:220, elec:120, plumb:150},
+  aclass:   {tiles:650, paint:320, doors:500, elec:240, plumb:380}
+};
+var PACKAGE_NAMES = {grey:'Grey Structure',standard:'Standard Finish',aclass:'A-Class Finish'};
+var STEEL_GRADE_RATE = {'60':270,'40':255};
+/* Unit factors relative to the base unit (per kg / per cft), used for auto-converting values */
+var UNIT_FACTORS = {steelUnit:{kg:1,ton:1000}, sandUnit:{cft:1,'100':100}, crushUnit:{cft:1,'100':100}};
+var UNIT_TARGET  = {steelUnit:'steel', sandUnit:'sand', crushUnit:'crush'};
+var STORE_KEY = 'karachiConstructionCost.v1';
+
+/* ---------- Helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// One number style throughout: Pakistani/Indian digit grouping (12,45,000)
+function nf(n,d){ return Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:d==null?0:d}); }
+function pkr(n){ return 'PKR '+nf(Math.round(n||0)); }
+function fmtQ(q){ return nf(q, q>=100?0:2); }
+function words(n){
+  if(n>=1e7) return '≈ '+(n/1e7).toFixed(2)+' crore';
+  if(n>=1e5) return '≈ '+(n/1e5).toFixed(2)+' lakh';
+  return '';
+}
+function opts(list){ return list.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join(''); }
+
+/* ---------- Build the form ---------- */
+function fieldHtml(f){
+  var tip = '<button type="button" class="tip" data-tip="'+esc(f.tip)+'" aria-label="Help: '+esc(f.tip)+'">?</button>';
+  var ctrl;
+  if(f.kind==='select'){
+    ctrl = '<select id="'+f.id+'">'+opts(f.options)+'</select>';
+  }else{
+    ctrl = '<div class="inp"><input id="'+f.id+'" type="number" inputmode="decimal" step="any" min="'+(f.min!=null?f.min:0)+'"'+
+           (f.max!=null?' max="'+f.max+'"':'')+' value="'+f.def+'" aria-describedby="warn_'+f.id+'">'+
+           (f.suffix?'<span class="suf">'+esc(f.suffix)+'</span>':'')+'</div>';
+    if(f.unit) ctrl += '<select id="'+f.unit.id+'" aria-label="'+esc(f.label)+' unit">'+opts(f.unit.options)+'</select>';
+  }
+  return '<div class="field"><div class="lab"><label for="'+f.id+'">'+esc(f.label)+'</label>'+tip+'</div>'+
+         '<div class="ctrl">'+ctrl+'</div>'+
+         (f.help?'<div class="help" id="help_'+f.id+'"></div>':'')+
+         '<div class="warn" id="warn_'+f.id+'" role="status"></div></div>';
+}
+function buildForm(){
+  var host = $('groups');
+  GROUPS.forEach(function(g){
+    var d = document.createElement('details');
+    d.className = 'card'; d.id = 'card_'+g.id; d.open = g.open !== false;
+    var h = '<summary>'+esc(g.title)+'</summary><div class="card-body">';
+    if(g.note) h += '<p class="note">'+esc(g.note)+'</p>';
+    g.fields.forEach(function(f){ h += fieldHtml(f); });
+    h += '</div>';
+    d.innerHTML = h;
+    host.appendChild(d);
+  });
+  setDefaults();
+}
+function setDefaults(){
+  FIELDS.forEach(function(f){
+    $(f.id).value = f.def;
+    if(f.unit){ $(f.unit.id).value = f.unit.def; $(f.unit.id).dataset.prev = f.unit.def; }
+  });
+  applyPreset('grey');
+}
+function applyPreset(p){
+  var pr = PRESETS[p];
+  Object.keys(pr).forEach(function(k){ $(k).value = pr[k]; });
+  $('doorMode').value = 'sqft';
+  $('doorMode').dataset.prev = 'sqft';
+}
+function updateFinishVisibility(){ $('card_finish').hidden = ($('package').value==='grey'); }
+
+/* ---------- Read + validate inputs ---------- */
+function parseField(f, raw){
+  var warn = '', s = String(raw).trim(), v = s==='' ? NaN : Number(s.replace(/,/g,''));
+  if(isNaN(v)){ v = 0; warn = 'Blank or invalid value — treated as 0.'; }
+  else if(v < 0){ v = 0; warn = 'Negative value — treated as 0.'; }
+  if(f.id==='floors'){
+    if(v < 1){ v = 1; warn = 'At least 1 floor is required — using 1.'; }
+    v = Math.floor(v);
+  }
+  if(f.max!=null && v > f.max){ v = f.max; warn = 'Capped at '+f.max+'%.'; }
+  return {v:v, warn:warn};
+}
+function readState(){
+  var s = {}, warns = {};
+  FIELDS.forEach(function(f){
+    var el = $(f.id);
+    if(f.kind==='select'){ s[f.id] = el.value; }
+    else{ var r = parseField(f, el.value); s[f.id] = r.v; warns[f.id] = r.warn; }
+    if(f.unit) s[f.unit.id] = $(f.unit.id).value;
+  });
+  return {s:s, warns:warns};
+}
+
+/* ---------- Core calculation (pure function, reused by the sensitivity table) ---------- */
+function calc(s, steelMult){
+  steelMult = steelMult==null ? 1 : steelMult;
+  // Step 1: plot area to sq ft (1 sq yd = 9 sq ft)
+  var plotSqft = s.plotArea * ({sqyd:9, sqft:1, sqm:10.7639}[s.plotUnit] || 1);
+  // Step 2: covered area = plot × (ground% + (floors−1) × upper%)
+  var floors = Math.max(1, s.floors);
+  var covered = plotSqft * (s.groundCov/100 + (floors-1) * s.upperCov/100);
+  // Step 3: quantities carry a wastage allowance
+  var w = 1 + s.wastage/100;
+  // Step 4: convert entered rates to base units (per kg / per cft / per brick)
+  var steelPerKg = s.steel * steelMult / (s.steelUnit==='ton' ? 1000 : 1);
+  var sandPerCft = s.sand / (s.sandUnit==='100' ? 100 : 1);
+  var crushPerCft = s.crush / (s.crushUnit==='100' ? 100 : 1);
+
+  var rows = [];
+  function add(cat,name,qty,unit,rateTxt,amount){ rows.push({cat:cat,name:name,qty:qty,unit:unit,rateTxt:rateTxt,amount:amount}); }
+
+  // Step 5: material quantity = covered × norm × (1+wastage); cost = quantity × rate
+  var qCement = covered * s.nCement * w;
+  add('structure','Cement', qCement,'bags (50 kg)', nf(s.cement,2), qCement * s.cement);
+  var qSteel = covered * s.nSteel * w;
+  add('structure','Steel bar (Grade '+s.steelGrade+')', qSteel,'kg', nf(steelPerKg,2)+' /kg', qSteel * steelPerKg);
+  var qSand = covered * s.nSand * w;
+  add('structure','Sand', qSand,'cft', nf(sandPerCft,2)+' /cft', qSand * sandPerCft);
+  var qCrush = covered * s.nCrush * w;
+  add('structure','Crush / aggregate', qCrush,'cft', nf(crushPerCft,2)+' /cft', qCrush * crushPerCft);
+  var qBricks = covered * s.nBricks * w;
+  add('structure','Bricks', qBricks,'nos', nf(s.bricks,2)+' /1,000', qBricks/1000 * s.bricks);
+  var litres = covered * s.nWater * w;
+  var tankers = s.litresTanker > 0 ? litres / s.litresTanker : 0;
+  add('structure','Water ('+nf(litres)+' litres)', tankers,'tankers', nf(s.tanker,2), tankers * s.tanker);
+
+  // Step 6: finishes (only for Standard / A-Class)
+  if(s.package !== 'grey'){
+    add('finishes','Flooring / tiles', covered,'sq ft', nf(s.tiles,2), covered * s.tiles);
+    add('finishes','Plaster + paint', covered,'sq ft', nf(s.paint,2), covered * s.paint);
+    if(s.doorMode==='lump') add('finishes','Doors & windows', 1,'lump sum', nf(s.doors,2), s.doors);
+    else add('finishes','Doors & windows', covered,'sq ft', nf(s.doors,2), covered * s.doors);
+    add('finishes','Electrical fittings', covered,'sq ft', nf(s.elec,2), covered * s.elec);
+    add('finishes','Plumbing & sanitary', covered,'sq ft', nf(s.plumb,2), covered * s.plumb);
+  }
+  // Step 7: labour = covered × rate per sq ft
+  add('labour','Labour', covered,'sq ft', nf(s.labour,2), covered * s.labour);
+  // Step 8: services are lump sums
+  add('services','Government approval charges', 1,'lump sum', nf(s.approval,2), s.approval);
+  add('services','Utility charges', 1,'lump sum', nf(s.utility,2), s.utility);
+
+  var cat = {structure:0, finishes:0, labour:0, services:0};
+  rows.forEach(function(r){ cat[r.cat] += r.amount; });
+  // Step 9: subtotal → + contingency → + contractor margin
+  var subtotal = cat.structure + cat.finishes + cat.labour + cat.services;
+  var contingency = subtotal * s.contingency/100;
+  var afterCont = subtotal + contingency;
+  var profit = afterCont * s.margin/100;
+  var total = afterCont + profit;
+  // Step 10: unit costs
+  var perSqft = covered > 0 ? total / covered : 0;
+  return {rows:rows, cat:cat, subtotal:subtotal, contingency:contingency, profit:profit, total:total,
+          covered:covered, perSqft:perSqft, perSqyd:perSqft*9, plotSqft:plotSqft, steelPerKg:steelPerKg,
+          sandPerCft:sandPerCft, crushPerCft:crushPerCft};
+}
+
+/* ---------- Rendering ---------- */
+var CATS = [['Structure','#0f766e'],['Finishes','#c2850c'],['Labour','#3b6ea5'],['Services','#7a5195'],['Contingency','#8d99a0'],['Profit','#d1495b']];
+var chart = null;
+var last = null;
+
+function renderBreakdown(r){
+  var names = {structure:'Structure materials', finishes:'Finishes', labour:'Labour', services:'Services & approvals'};
+  var t = r.total, h = '';
+  function pct(a){ return t>0 ? nf(a/t*100,1)+'%' : '0%'; }
+  ['structure','finishes','labour','services'].forEach(function(c){
+    var rows = r.rows.filter(function(x){ return x.cat===c; });
+    if(!rows.length) return;
+    h += '<tr class="grp"><th colspan="6">'+names[c]+'</th></tr>';
+    rows.forEach(function(x){
+      h += '<tr><td>'+esc(x.name)+'</td><td class="n">'+fmtQ(x.qty)+'</td><td>'+x.unit+'</td><td class="n">'+x.rateTxt+
+           '</td><td class="n">'+nf(Math.round(x.amount))+'</td><td class="n">'+pct(x.amount)+'</td></tr>';
+    });
+    h += '<tr class="subr"><td colspan="4">Subtotal — '+names[c]+'</td><td class="n">'+nf(Math.round(r.cat[c]))+'</td><td class="n">'+pct(r.cat[c])+'</td></tr>';
+  });
+  h += '<tr class="grp"><th colspan="6">Totals</th></tr>';
+  h += '<tr class="subr"><td colspan="4">Subtotal (before contingency &amp; margin)</td><td class="n">'+nf(Math.round(r.subtotal))+'</td><td class="n">'+pct(r.subtotal)+'</td></tr>';
+  h += '<tr><td colspan="4">Contingency / misc. ('+nf(last.s.contingency,2)+'%)</td><td class="n">'+nf(Math.round(r.contingency))+'</td><td class="n">'+pct(r.contingency)+'</td></tr>';
+  h += '<tr><td colspan="4">Contractor profit / margin ('+nf(last.s.margin,2)+'%)</td><td class="n">'+nf(Math.round(r.profit))+'</td><td class="n">'+pct(r.profit)+'</td></tr>';
+  h += '<tr class="tot"><td colspan="4">TOTAL</td><td class="n">'+nf(Math.round(r.total))+'</td><td class="n">'+(t>0?'100%':'0%')+'</td></tr>';
+  $('breakdown').innerHTML = h;
+}
+
+function renderChart(r){
+  var vals = [r.cat.structure, r.cat.finishes, r.cat.labour, r.cat.services, r.contingency, r.profit].map(function(v){ return Math.round(v); });
+  var useChart = (typeof Chart !== 'undefined') && !window.noChart;
+  $('chartWrap').hidden = !useChart;
+  $('bars').hidden = useChart;
+  if(useChart){
+    try{
+      if(!chart){
+        chart = new Chart($('chart'), {type:'doughnut',
+          data:{labels:CATS.map(function(c){return c[0];}), datasets:[{data:vals, backgroundColor:CATS.map(function(c){return c[1];}), borderWidth:2}]},
+          options:{responsive:true, maintainAspectRatio:false, animation:false,
+            plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label:function(c){
+              var tot = c.dataset.data.reduce(function(a,b){return a+b;},0);
+              return ' '+c.label+': '+pkr(c.parsed)+' ('+(tot>0?nf(c.parsed/tot*100,1):0)+'%)';}}}}}});
+      }else{ chart.data.datasets[0].data = vals; chart.update(); }
+      return;
+    }catch(e){ $('chartWrap').hidden = true; $('bars').hidden = false; }
+  }
+  // Pure-CSS fallback bars
+  var tot = vals.reduce(function(a,b){return a+b;},0), h = '';
+  CATS.forEach(function(c,i){
+    var p = tot>0 ? vals[i]/tot*100 : 0;
+    h += '<div class="bar"><span>'+c[0]+'</span><div class="track"><div class="fill" style="width:'+p.toFixed(1)+'%;background:'+c[1]+'"></div></div><span class="v">'+nf(p,1)+'%</span></div>';
+  });
+  $('bars').innerHTML = h;
+}
+
+function renderSensitivity(s, base){
+  var h = '';
+  [-0.2,-0.1,0,0.1,0.2].forEach(function(m){
+    var r = calc(s, 1+m);
+    var d = base.perSqyd>0 ? (r.perSqyd-base.perSqyd)/base.perSqyd*100 : 0;
+    h += '<tr'+(m===0?' class="base"':'')+'><td>'+(m>0?'+':'')+Math.round(m*100)+'%'+(m===0?' (base)':'')+'</td><td class="n">'+nf(r.steelPerKg,1)+
+         '</td><td class="n">'+pkr(r.perSqyd)+'</td><td class="n">'+pkr(r.total)+'</td><td class="n">'+(m===0?'—':(d>0?'+':'')+nf(d,1)+'%')+'</td></tr>';
+  });
+  $('sens').innerHTML = h;
+}
+
+function render(){
+  var st = readState(), s = st.s;
+  last = {s:s};
+  // Inline warnings
+  FIELDS.forEach(function(f){
+    if(f.kind==='select') return;
+    var w = st.warns[f.id] || '';
+    $('warn_'+f.id).textContent = w;
+    $(f.id).setAttribute('aria-invalid', w ? 'true' : 'false');
+  });
+  var r = calc(s, 1);
+  last.r = r;
+  // Headline numbers
+  $('rTotal').textContent = pkr(r.total);
+  $('rWords').textContent = words(r.total);
+  $('rYd').textContent = pkr(r.perSqyd);
+  $('rFt').textContent = pkr(r.perSqft);
+  $('rArea').textContent = nf(r.covered,1)+' sq ft';
+  $('rAreaYd').textContent = '= '+nf(r.covered/9,1)+' sq yd (plot: '+nf(r.plotSqft/9,1)+' sq yd)';
+  $('mbTotal').textContent = pkr(r.total);
+  $('mbYd').textContent = pkr(r.perSqyd);
+  // Helpers under inputs
+  $('help_steel').textContent = '= PKR '+nf(r.steelPerKg*1000,0)+' per tonne  ·  PKR '+nf(r.steelPerKg,2)+' per kg';
+  $('help_sand').textContent = 'Cost per 100 cft: PKR '+nf(r.sandPerCft*100,0);
+  $('help_crush').textContent = 'Cost per 100 cft: PKR '+nf(r.crushPerCft*100,0);
+  // Print header
+  $('printMeta').textContent = 'Karachi construction estimate — plot '+nf(r.plotSqft/9,1)+' sq yd, '+s.floors+' floor(s), '+
+    PACKAGE_NAMES[s.package]+'. Prepared '+new Date().toLocaleDateString('en-GB')+'. Indicative estimate only.';
+  renderBreakdown(r);
+  renderChart(r);
+  renderSensitivity(s, r);
+}
+
+/* ---------- Persistence ---------- */
+function save(){
+  try{
+    var o = {};
+    FIELDS.forEach(function(f){ o[f.id] = $(f.id).value; if(f.unit) o[f.unit.id] = $(f.unit.id).value; });
+    localStorage.setItem(STORE_KEY, JSON.stringify(o));
+  }catch(e){}
+}
+function restore(){
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return;
+    var o = JSON.parse(raw);
+    Object.keys(o).forEach(function(k){ var el = $(k); if(el && o[k]!=null) el.value = o[k]; });
+    Object.keys(UNIT_FACTORS).forEach(function(k){ $(k).dataset.prev = $(k).value; });
+    $('doorMode').dataset.prev = $('doorMode').value;
+  }catch(e){}
+}
+
+/* ---------- CSV export ---------- */
+function csvCell(v){ v = String(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+function exportCSV(){
+  var r = last.r, s = last.s, t = r.total;
+  var p = function(a){ return t>0 ? (a/t*100).toFixed(1) : '0.0'; };
+  var lines = [['Category','Item','Quantity','Unit','Rate (PKR)','Amount (PKR)','% of total']];
+  r.rows.forEach(function(x){ lines.push([x.cat,x.name,x.qty.toFixed(2),x.unit,x.rateTxt,Math.round(x.amount),p(x.amount)]); });
+  lines.push(['totals','Subtotal','','','',Math.round(r.subtotal),p(r.subtotal)]);
+  lines.push(['totals','Contingency ('+s.contingency+'%)','','','',Math.round(r.contingency),p(r.contingency)]);
+  lines.push(['totals','Contractor margin ('+s.margin+'%)','','','',Math.round(r.profit),p(r.profit)]);
+  lines.push(['totals','TOTAL','','','',Math.round(r.total),'100.0']);
+  lines.push([]);
+  lines.push(['summary','Covered area (sq ft)',r.covered.toFixed(1)]);
+  lines.push(['summary','Covered area (sq yd)',(r.covered/9).toFixed(1)]);
+  lines.push(['summary','Cost per sq ft (PKR)',Math.round(r.perSqft)]);
+  lines.push(['summary','Cost per sq yd (PKR)',Math.round(r.perSqyd)]);
+  var csv = '\ufeff' + lines.map(function(l){ return l.map(csvCell).join(','); }).join('\r\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = 'karachi-construction-breakdown.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+}
+
+/* ---------- Events ---------- */
+function onChange(e){
+  var id = e.target.id;
+  if(id==='package'){
+    applyPreset(e.target.value); updateFinishVisibility();
+  }else if(id==='steelGrade'){
+    $('steel').value = STEEL_GRADE_RATE[e.target.value] * (UNIT_FACTORS.steelUnit[$('steelUnit').value] || 1);
+  }else if(UNIT_FACTORS[id]){
+    // Keep the real rate the same when the unit changes (e.g. PKR/kg → PKR/tonne)
+    var F = UNIT_FACTORS[id], inp = $(UNIT_TARGET[id]), v = parseFloat(inp.value), prev = e.target.dataset.prev || e.target.value;
+    if(isFinite(v) && F[prev]) inp.value = +(v * F[e.target.value] / F[prev]).toFixed(2);
+    e.target.dataset.prev = e.target.value;
+  }
+  render(); save();
+}
+function init(){
+  buildForm();
+  restore();
+  updateFinishVisibility();
+  var form = $('groups');
+  form.addEventListener('input', function(){ render(); save(); });
+  form.addEventListener('change', onChange);
+  $('btnReset').addEventListener('click', function(){
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    setDefaults(); updateFinishVisibility(); render();
+  });
+  $('btnPrint').addEventListener('click', function(){ window.print(); });
+  $('btnCsv').addEventListener('click', exportCSV);
+  render();
+}
+init();
+})();
+</script>
+</body>
+</html>
