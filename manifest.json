@@ -1,6 +1,6 @@
 {
   "name": "Karachi Construction Cost Calculator",
-  "short_name": "Karachi Cost Calc",
+  "short_name": "Construction Cost Calc",
   "description": "Estimate total cost and cost per square yard from editable material and labour rates.",
   "start_url": "./index.html",
   "scope": "./",
