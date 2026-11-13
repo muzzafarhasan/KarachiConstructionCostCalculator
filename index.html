@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Karachi Construction Cost Calculator</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Karachi Cost Calc">
+<meta name="description" content="Estimate Karachi construction cost and cost per square yard from editable material and labour rates. Works offline.">
 <style>
   :root{
     --accent:#0f766e; --accent-dark:#0b5a54; --accent-soft:#e6f3f1;
@@ -596,6 +605,13 @@ function init(){
 }
 init();
 })();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* offline support unavailable */ });
+  });
+}
 </script>
 </body>
 </html>
